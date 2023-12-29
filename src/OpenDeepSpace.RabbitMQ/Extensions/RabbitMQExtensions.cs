@@ -2,10 +2,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenDeepSpace.RabbitMQ.Options;
-using OpenDeepSpace.RabbitMQ.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,16 +13,33 @@ namespace OpenDeepSpace.RabbitMQ.Extensions
 {
     public static class RabbitMQExtensions
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="assemblies"></param>
+        /// <param name="action"></param>
+        /// <returns></returns>
+        public static IServiceCollection InitRabbitMQ(this IServiceCollection services, IEnumerable<Assembly> assemblies, Action<RabbitMQOptions> action = null)
+        {
+
+            if(assemblies == null)
+                throw new ArgumentNullException(nameof(assemblies));
+
+            return services.InitRabbitMQ(assemblies.SelectMany(t => t.GetTypes()), action);
+        }
 
         /// <summary>
         /// 配置MQ
         /// </summary>
         /// <param name="services"></param>
+        /// <param name="types">类型集</param>
         /// <param name="action"></param>
         /// <returns></returns>
-        public static IServiceCollection InitRabbitMQ(this IServiceCollection services,Action<RabbitMQOptions> action=null)
+        public static IServiceCollection InitRabbitMQ(this IServiceCollection services, IEnumerable<Type> types,Action<RabbitMQOptions> action=null)
         {
-
+            if(types ==null)
+                throw new ArgumentNullException(nameof(types));
            
             var configuration=services.BuildServiceProvider().GetRequiredService<IConfiguration>();
 
@@ -47,7 +64,7 @@ namespace OpenDeepSpace.RabbitMQ.Extensions
             services.AddTransient<IMQConsumerHandle, NullMQConsumerHandle>();
 
             //查找集成了RabbitMQConsumer的类
-            var types = TypeFinder.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract  && t.GetInterface(typeof(IRabbitMQConsumer).Name) != null).ToArray();
+            types = types.Where(t => t.IsClass && !t.IsAbstract  && t.GetInterface(typeof(IRabbitMQConsumer).Name) != null).ToArray();
 
             foreach (Type hostserviceType in types)
             {

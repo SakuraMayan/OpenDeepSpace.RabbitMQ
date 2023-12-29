@@ -1,4 +1,5 @@
 using OpenDeepSpace.RabbitMQ.Extensions;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 //≥ı ºªØRabbitMQ
-builder.Services.InitRabbitMQ();
+builder.Services.InitRabbitMQ(new List<Assembly> { typeof(Program).Assembly });
 
 var app = builder.Build();
 
